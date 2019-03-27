@@ -105,6 +105,33 @@ module.exports = class Transaction {
     // 4) From here, you can gather the amount of **input** available to
     //      this transaction.
 
+    let txIds = Object.keys(utxos);
+    let sumOfInputs = 0;
+    for(let tx of this.inputs)
+    {
+      if(txIds.includes(tx.txID))
+      {
+        // get the utxo referenced in input tx.
+        let tempUtxo = utxos[tx.txID][tx.outputIndex];
+        // verify that utxo exits and pubkeys match and sig is good
+        if(tempUtxo 
+          && utils.calcAddress(tx.pubKey) == tempUtxo.address 
+          && utils.verifySignature(tx.pubKey, tempUtxo, tx.sig))
+        {
+          sumOfInputs += tempUtxo.amount;
+        }
+        else
+        { // the input transaction points to a utxo that does not exsit or pukey dont match or sig is not valid.
+          return false;
+        }
+      }
+      else
+      { // one of the inputs does not actually exists.
+        return false;
+      }
+    }
+
+    return sumOfInputs >= this.totalOutput();
   }
 
   /**
