@@ -99,11 +99,25 @@ module.exports = class Wallet {
     // Return an object containing the array of inputs and the
     // amount of change needed.
 
+    let utxosToSpend = [];
+    let sum = 0;
+    while(sum < amount)
+    {
+      let curCoin = this.coins.pop();
+      let pair = this.addresses[curCoin.output.address];
+      utxosToSpend.push({
+        txID: curCoin.txID, 
+        outputIndex: curCoin.outputIndex, 
+        pubKey: pair.public,
+        sig: utils.sign(pair.private, JSON.stringify(curCoin.output)),
+      });
+      sum += utxosToSpend[utxosToSpend.length -1].amount;
+    }
 
     // Currently returning default values.
     return {
-      inputs: [],
-      changeAmt: 0,
+      inputs: utxosToSpend,
+      changeAmt: sum-amount,
     };
 
   }
