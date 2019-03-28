@@ -111,13 +111,13 @@ module.exports = class Wallet {
         pubKey: pair.public,
         sig: utils.sign(pair.private, JSON.stringify(curCoin.output)),
       });
-      sum += utxosToSpend[utxosToSpend.length -1].amount;
+      sum += curCoin.output.amount;
     }
 
     // Currently returning default values.
     return {
       inputs: utxosToSpend,
-      changeAmt: sum-amount,
+      changeAmt: sum - amount,
     };
 
   }
