@@ -7,7 +7,7 @@ const Transaction = require('./transaction.js');
 const utils = require('./utils.js');
 
 const POW_BASE_TARGET = new BigInteger("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16);
-const POW_TARGET = POW_BASE_TARGET.shiftRight(20);
+const POW_TARGET = POW_BASE_TARGET.shiftRight(18);
 const COINBASE_AMT_ALLOWED = 25;
 
 /**
@@ -197,6 +197,24 @@ module.exports = class Block {
     // 3) Calculate the miner's transaction fee, determined by the difference between the inputs and the outputs.
     //    The addTransactionFee method might help you with this part.
 
+    let inputTotal = 0;
+    this.transactions.set(tx.id, tx);
+    // delete the utxos from unspent ones.
+    tx.inputs.forEach(({txID, outputIndex}) => {
+      inputTotal += this.utxos[txID][outputIndex].amount;
+      delete this.utxos[txID][outputIndex];
+      // delete the transactions entire utxo if it is all spent.
+      if(this.utxos[txID].length == 0) delete this.utxos[txID];
+    });
+    
+    // add the new utxos.
+    this.utxos[tx.id] = tx.outputs;
+    
+    // if it is coinbase transaction, add it.
+    if(forceAccept) return;
+    
+    // adjust the fees.
+    this.addTransactionFee(inputTotal - tx.totalOutput());
   }
 
   /**
